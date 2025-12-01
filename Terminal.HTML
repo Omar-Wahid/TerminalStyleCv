@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', 'Courier New', monospace;
+            padding: 20px;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-width: 55ch;
+            margin: 0;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: unset;
+            font-smooth: never;
+            text-rendering: optimizeSpeed;
+            text-shadow: 0 0 3px #0f0, 0 0 6px #0f0;
+            animation: flicker 0.15s infinite;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(18, 16, 16, 0) 50%,
+                rgba(0, 0, 0, 0.25) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            5% { opacity: 0.98; }
+            10% { opacity: 0.97; }
+            15% { opacity: 1; }
+            20% { opacity: 0.98; }
+            25% { opacity: 0.97; }
+            30% { opacity: 0.99; }
+            35% { opacity: 0.98; }
+            40% { opacity: 1; }
+            45% { opacity: 0.97; }
+            50% { opacity: 0.99; }
+            55% { opacity: 0.98; }
+            60% { opacity: 1; }
+            65% { opacity: 0.97; }
+            70% { opacity: 0.99; }
+            75% { opacity: 0.98; }
+            80% { opacity: 0.97; }
+            85% { opacity: 1; }
+            90% { opacity: 0.99; }
+            95% { opacity: 0.98; }
+            100% { opacity: 0.97; }
+        }
+
+        #terminal {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            padding-right: 10px;
+            scrollbar-width: none;
+        }
+
+        #terminal::-webkit-scrollbar {
+            display: none;
+        }
+
+        .line {
+            margin-bottom: 5px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .prompt {
+            color: #0f0;
+            font-weight: bold;
+        }
+
+        .command {
+            color: #fff;
+        }
+
+        .output {
+            color: #0f0;
+            margin-left: 20px;
+        }
+
+        #input-line {
+            display: flex;
+            align-items: center;
+        }
+
+        #input-line .prompt {
+            margin-right: 5px;
+        }
+
+        #command-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            outline: none;
+            caret-color: transparent;
+        }
+        
+        #command-input::after {
+            content: '';
+            display: inline-block;
+            width: 10px;
+            height: 18px;
+            background: #0f0;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 18px;
+            background: #0f0;
+            animation: blink 1s infinite;
+            margin-left: 2px;
+            vertical-align: middle;
+        }
+
+        .welcome {
+            color: #0f0;
+            margin-bottom: 20px;
+            text-shadow: 0 0 5px #0f0, 0 0 10px #0f0;
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal">
+        <div class="welcome">
+═══════════════════════════════════════════════════════
+
+   ░█████╗░███╗░░░███╗░█████╗░██████╗░
+   ██╔══██╗████╗░████║██╔══██╗██╔══██╗
+   ██║░░██║██╔████╔██║███████║██████╔╝
+   ██║░░██║██║╚██╔╝██║██╔══██║██╔══██╗
+   ╚█████╔╝██║░╚═╝░██║██║░░██║██║░░██║
+   ░╚════╝░╚═╝░░░░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝
+
+ ░██╗░░░░░░░██╗░█████╗░██╗░░██╗██╗██████╗░
+ ░██║░░██╗░░██║██╔══██╗██║░░██║██║██╔══██╗
+ ░╚██╗████╗██╔╝███████║███████║██║██║░░██║
+ ░░████╔═████║░██╔══██║██╔══██║██║██║░░██║
+ ░░╚██╔╝░╚██╔╝░██║░░██║██║░░██║██║██████╔╝
+ ░░░╚═╝░░░╚═╝░░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝╚═════╝░
+
+═══════════════════════════════════════════════════════
+     TERMINAL v1.0 - Type 'help' for info
+═══════════════════════════════════════════════════════
+        </div>
+    </div>
+    
+    <div id="input-line"><span class="prompt">$ </span><div id="input-wrapper"><input type="text" id="command-input" autofocus><span class="cursor"></span></div></div>
+
+    <script>
+        const terminal = document.getElementById('terminal');
+        const input = document.getElementById('command-input');
+        const cursor = document.querySelector('.cursor');
+        const commandHistory = [];
+        let historyIndex = -1;
+
+        // Create audio context for beep sounds
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playBeep() {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 440; // Fixed frequency
+            oscillator.type = 'square'; // Square wave for that 8-bit sound
+            
+            gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.08);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.08);
+        }
+        
+        function playErrorSound() {
+            // Two-tone descending error beep
+            const now = audioContext.currentTime;
+            
+            // First tone (higher)
+            const osc1 = audioContext.createOscillator();
+            const gain1 = audioContext.createGain();
+            osc1.connect(gain1);
+            gain1.connect(audioContext.destination);
+            osc1.frequency.value = 400;
+            osc1.type = 'square';
+            gain1.gain.setValueAtTime(0.08, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            osc1.start(now);
+            osc1.stop(now + 0.15);
+            
+            // Second tone (lower)
+            const osc2 = audioContext.createOscillator();
+            const gain2 = audioContext.createGain();
+            osc2.connect(gain2);
+            gain2.connect(audioContext.destination);
+            osc2.frequency.value = 200;
+            osc2.type = 'square';
+            gain2.gain.setValueAtTime(0.08, now + 0.15);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+            osc2.start(now + 0.15);
+            osc2.stop(now + 0.35);
+        }
+        
+        function playFloppySound() {
+            // Create multiple oscillators for mechanical floppy disk sound
+            const duration = 0.6;
+            const now = audioContext.currentTime;
+            
+            // Low frequency rumble (motor)
+            const motor = audioContext.createOscillator();
+            const motorGain = audioContext.createGain();
+            motor.connect(motorGain);
+            motorGain.connect(audioContext.destination);
+            motor.type = 'sawtooth';
+            motor.frequency.value = 60;
+            motorGain.gain.setValueAtTime(0.03, now);
+            motorGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            motor.start(now);
+            motor.stop(now + duration);
+            
+            // Random clicking sounds (read head movement)
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    const click = audioContext.createOscillator();
+                    const clickGain = audioContext.createGain();
+                    click.connect(clickGain);
+                    clickGain.connect(audioContext.destination);
+                    click.type = 'square';
+                    click.frequency.value = Math.random() * 200 + 100;
+                    clickGain.gain.setValueAtTime(0.02, audioContext.currentTime);
+                    clickGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
+                    click.start(audioContext.currentTime);
+                    click.stop(audioContext.currentTime + 0.05);
+                }, i * 70);
+            }
+        }
+
+        // Auto-resize input and position cursor at the end
+        function updateInput() {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            context.font = '16px "SF Mono", Monaco, Menlo, Consolas, "Courier New", monospace';
+            const width = context.measureText(input.value).width;
+            input.style.width = Math.max(1, width + 2) + 'px';
+            cursor.style.left = width + 'px';
+        }
+        
+        input.addEventListener('input', updateInput);
+        input.addEventListener('keydown', updateInput);
+        input.addEventListener('keyup', updateInput);
+        
+        // Initialize
+        updateInput();
+
+        // Built-in commands
+        const commands = {
+            help: () => {
+                return `Available commands:
+
+  help      - Show this help message
+  date      - Show current date and time
+  about     - About this terminal
+  contact   - Contact information
+  xp        - My work experience
+  aaa       - My AAA games portfolio
+  indie     - My indie games portfolio
+  certs     - My certifications
+  talents   - My technical skills`;
+            },
+            date: () => {
+                return new Date().toString();
+            },
+            about: () => {
+                return `Omar Wahid's Interactive Terminal
+A retro-styled web terminal with authentic CRT effects
+Built with HTML, CSS, and JavaScript
+Press ↑/↓ to navigate command history`;
+            },
+            contact: () => {
+                return `Contact Information:
+
+Email:     Omar.imeche@gmail.com
+LinkedIn:  www.linkedin.com/in/omar-wahid
+Location:  Berlin, Germany
+Phone:     +49 152 59794522`;
+            },
+            xp: () => {
+                return `Work Experience:
+
+Technical Designer | Wargaming GMBH
+06/2023 - 02/2025 | Berlin, Germany
+• Improved design efficiency by 30% through prototype programming
+• Enhanced user engagement by 15% with innovative game mechanics
+• Documented game mechanics for cross-team collaboration
+• Coordinated Physics engine work for vehicle dynamics
+
+Technical Lead | Undisclosed TechDevelopment Startup
+09/2018 - 05/2023 | Saudi Arabia
+• Supervised agile development teams with focus on security
+• Managed stakeholder expectations and project funding strategies
+• Created technical documentation for system design & security protocols
+• Interviewed and selected technical talent
+
+Lead Technical Coordinator | Xbox
+08/2018 - 02/2020 | USA
+• Linked main branch with 7 international centers
+• Led team of 20 technical support staff globally
+• Synced technical patches with development teams
+
+Technical Content Creator | IGN Dubai
+09/2013 - 08/2018 | Dubai
+• Produced content for 50,000+ viewers (25% engagement increase)
+• Managed 5 digital properties (30% web traffic increase)
+• Reached 500,000 monthly viewers
+
+Branding Specialist | Pink Prints
+06/2004 - 09/2010 | USA
+• Created 15+ comprehensive brand suites and identity guides
+• Increased brand recognition by 20%`;
+            },
+            aaa: () => {
+                return `AAA Games Portfolio:
+
+Wargaming GMBH - Technical Designer
+• World of Tanks series - Vehicle dynamics & game mechanics
+• Programmed 10+ prototypes for gameplay testing
+• Designed innovative mechanics improving engagement by 15%
+• Coordinated Physics engine implementation
+• Led game balance improvements
+
+Xbox - Lead Technical Coordinator
+• Global technical support for Xbox gaming ecosystem
+• Managed international technical operations across 7 centers
+• Coordinated technical patches with development teams`;
+            },
+            indie: () => {
+                return `Indie Games & Projects:
+
+Undisclosed TechDevelopment Startup - Technical Lead
+• Supervised agile development teams on multiple projects
+• Led 5 successful gaming projects with 100% security protocol adherence
+• Managed project portfolio exceeding $2 million
+• No security breaches over 5 years
+• Implemented secure development practices across teams`;
+            },
+            certs: () => {
+                return `Certifications:
+
+CompTIA A+ (Certified)
+CompTIA CySA+ (Certified)
+CompTIA Security+ (Certified)
+
+Training & Courses:
+• Python 100 Days Bootcamp
+• NeueFische Cybersecurity Professional Bootcamp
+• C Programming - Stanford University Bootcamp
+
+Education:
+Bachelor of Science in Automotive Engineering
+Helwan University (2004-2010) | Cairo, Egypt
+Recognized by German authority ZAB`;
+            },
+            talents: () => {
+                return `Technical Skills:
+
+Programming & Scripting:
+• Python | C/C++ | Bash | PowerShell | GoLang | Lua | HTML/CSS
+
+Cybersecurity Tools:
+• SIEM (Splunk) | Nessus | Burp Suite | Wireshark | Metasploit
+• NMap | Net Discover | Green Bone | Kali Linux | Autopsy Tool
+• Vulnerability Scanning | Forensic Imaging | Risk Assessment
+
+Security Frameworks:
+• ISO 27001 | NIST | OWASP | MITRE ATT&CK | OSINT
+
+Systems & Operations:
+• Windows/Linux CLI | Git/Stash | Data Backup | Access Control
+
+Project Management:
+• Agile | Jira | Confluence | Miro | AHA | Technical Documentation
+
+Transferable Skills:
+• Game Development & Design
+• Technical Content Creation (200+ pieces, 500k monthly viewers)
+• Team Leadership & Coordination
+• Stakeholder Management`;
+            }
+        };
+
+        function addLine(content, className = 'output', isError = false) {
+            setTimeout(() => {
+                const line = document.createElement('div');
+                line.className = `line ${className}`;
+                line.textContent = content;
+                terminal.appendChild(line);
+                terminal.scrollTop = terminal.scrollHeight;
+                if (isError) {
+                    playErrorSound();
+                } else {
+                    playBeep();
+                }
+            }, 700); // Delay to match floppy sound
+        }
+
+        function processCommand(commandText) {
+            // Add command to display
+            const cmdLine = document.createElement('div');
+            cmdLine.className = 'line';
+            cmdLine.innerHTML = `<span class="prompt">$</span> <span class="command">${commandText}</span>`;
+            terminal.appendChild(cmdLine);
+            playBeep(); // Play sound for command echo
+
+            // Parse command
+            const parts = commandText.trim().split(' ');
+            const cmd = parts[0].toLowerCase();
+            const args = parts.slice(1);
+
+            // Play floppy disk sound before processing
+            playFloppySound();
+
+            // Execute command
+            if (cmd === '') {
+                // Empty command, just show new prompt
+            } else if (commands[cmd]) {
+                const output = commands[cmd](args);
+                if (output !== null) {
+                    addLine(output);
+                }
+            } else {
+                addLine(`Command not found: ${cmd}. Type 'help' for available commands.`, 'output', true);
+            }
+
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // Handle enter key
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const commandText = input.value;
+                
+                if (commandText.trim() !== '') {
+                    commandHistory.push(commandText);
+                    historyIndex = commandHistory.length;
+                }
+
+                processCommand(commandText);
+                input.value = '';
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    input.value = commandHistory[historyIndex];
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    input.value = commandHistory[historyIndex];
+                } else {
+                    historyIndex = commandHistory.length;
+                    input.value = '';
+                }
+            }
+        });
+
+        // Keep input focused
+        document.addEventListener('click', () => {
+            input.focus();
+        });
+    </script>
+</body>
+</html>

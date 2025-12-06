@@ -209,6 +209,27 @@
             oscillator.stop(audioContext.currentTime + 0.08);
         }
         
+        function playClickSound() {
+            // Low-pitched click with very slight random variation
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Random pitch variation between 80-120 Hz (very low, tight range)
+            const basePitch = 100;
+            const variation = (Math.random() - 0.5) * 40; // ±20 Hz
+            oscillator.frequency.value = basePitch + variation;
+            oscillator.type = 'square';
+            
+            gainNode.gain.setValueAtTime(0.03, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.02);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.02);
+        }
+        
         function playErrorSound() {
             // Two-tone descending error beep
             const now = audioContext.currentTime;
@@ -575,17 +596,36 @@ Languages:
 
         function addLine(content, className = 'output', isError = false) {
             setTimeout(() => {
-                const line = document.createElement('div');
-                line.className = `line ${className}`;
-                line.textContent = content;
-                terminal.appendChild(line);
-                terminal.scrollTop = terminal.scrollHeight;
-                if (isError) {
-                    playErrorSound();
-                } else {
-                    playBeep();
+                // Split content into lines
+                const lines = content.split('\n');
+                let lineIndex = 0;
+                
+                function addNextLine() {
+                    if (lineIndex < lines.length) {
+                        const line = document.createElement('div');
+                        line.className = `line ${className}`;
+                        line.textContent = lines[lineIndex];
+                        terminal.appendChild(line);
+                        terminal.scrollTop = terminal.scrollHeight;
+                        
+                        // Play click sound for each line
+                        playClickSound();
+                        
+                        lineIndex++;
+                        // Add next line after a short delay (50ms for smooth effect)
+                        setTimeout(addNextLine, 50);
+                    } else {
+                        // Play beep or error sound after all lines are rendered
+                        if (isError) {
+                            playErrorSound();
+                        } else {
+                            playBeep();
+                        }
+                    }
                 }
-            }, 700); // Delay to match floppy sound
+                
+                addNextLine();
+            }, 700); // Initial delay to match floppy sound
         }
 
         function processCommand(commandText) {
